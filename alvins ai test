@@ -1,0 +1,136 @@
+```python
+import requests
+import subprocess
+import tkinter as tk
+import speech_recognition as sr
+import openai
+from googlesearch import search
+from bs4 import BeautifulSoup
+
+openai.api_key = "your_api_key"
+
+def download_file(url, filename):
+    response = requests.get(url)
+    with open(filename, 'wb') as f:
+        f.write(response.content)
+
+def install_and_run_software(file_path):
+    subprocess.run(['msiexec', '/i', file_path])
+    subprocess.run([file_path])
+
+def handle_web_browser_tasks(url):
+    from selenium import webdriver
+    driver = webdriver.Firefox()
+    driver.get(url)
+
+def get_software_description(text):
+    response = openai.Completion.create(
+        engine="davinci-codex",
+        prompt=f"Explain the functionalities of the following software: {text}",
+        max_tokens=100,
+        n=1,
+        stop=None,
+        temperature=0.5,
+    )
+    return response.choices[0].text.strip()
+
+def get_voice_command():
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        audio = recognizer.listen(source)
+    try:
+continue
+        command = recognizer.recognize_google(audio)
+        print(f"You said: {command}")
+        return command
+    except Exception as e:
+        print("Sorry, could not recognize your voice")
+        return None
+
+ search_web(query):
+    urls = [j for j in search(query, num_results=5)]
+    return urls
+
+def extract_content(url):
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    paragraphs = soup.find_all('p')
+    content = ' '.join([p.get_text() for p in paragraphs])
+    return content
+
+def follow_instructions(command):
+    query = f"How to {command}"
+    urls = search_web(query)
+    for url in urls:
+        content = extract_content(url)
+        instructions = get_software_description(content)
+        if instructions:
+            print(f"Instructions from {url}:")
+            print(instructions)
+            break
+    else:
+        print("No instructions found. Please try a different command.")
+
+def show_help():
+    print("Available commands:")
+    print(" download [URL] - Download a file from the given URL")
+    print(" install [file_path] - Install and run the software at the given file path")
+    print(" browse [URL] -Open the given URL in a web browser")
+    print(" help - Show this help message")
+    print(" voice - Activate voice command input")
+    print(" instructions [task] - Search the web for instructions on how to perform a specific task")
+
+def process_command(command):
+    tokens = command.lower().split()
+    if "download" in tokens:
+        url = tokens[tokens.index("download") + 1]
+        filename = url.split('/')[-1]
+        download_file(url, filename)
+    elif "install" in tokens:
+        file_path = tokens[tokens.index("install") + 1]
+        install_and_run_software(file_path)
+    elif "browse" in tokens:
+        url = tokens[tokens.index("browse") + 1]
+        handle_web_browser_tasks(url)
+    elif "help" in tokens:
+        show_help()
+    elif "voice" in tokens:
+        voice_command = get_voice_command()
+        if voice_command:
+            process_command(voice_command)
+    elif "instructions" in tokens:
+        follow_instructions(' '.join(tokens[tokens.index("instructions") + 1:]))
+    else:
+        print("Command not recognized. Please try again.")
+
+def on_submit():
+    command = entry.get()
+    process_command(command)
+
+def on_voice_submit():
+    voice_command = get_voice_command()
+    if voice_command:
+        process_command(voice_command)
+
+root = tk.Tk()
+root.title("AI Bot")
+
+frame = tk.Frame(root)
+frame.pack()
+
+label = tk.Label(frame, text="Enter a command:")
+label.pack()
+
+entry = tk.Entry(frame)
+entry.pack()
+
+submit_button = tk.Button(frame, text="Submit", command=on_submit)
+submit_button.pack()
+
+voice_button = tk.Button(frame, text="Voice Command", command=on_voice_submit)
+voice_button.pack()
+
+root.mainloop()
+```
+
